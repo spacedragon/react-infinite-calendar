@@ -1,7 +1,7 @@
-import {compose, withProps, withPropsOnChange, withState} from 'recompose';
+import { compose, withProps, withPropsOnChange, withState } from 'recompose';
 import classNames from 'classnames';
-import {withDefaultProps} from './';
-import {withImmutableProps} from '../utils';
+import { withDefaultProps } from './';
+import { withImmutableProps } from '../utils';
 import isBefore from 'date-fns/is_before';
 import enhanceHeader from '../Header/withRange';
 import format from 'date-fns/format';
@@ -11,21 +11,21 @@ import styles from '../Day/Day.scss';
 let isTouchDevice = false;
 
 export const EVENT_TYPE = {
-  START:1,
-  HOVER:2,
-  END:3
+  START: 1,
+  HOVER: 2,
+  END: 3
 };
 
 // Enhance Day component to display selected state based on an array of selected dates
-export const enhanceDay = withPropsOnChange(['selected'], ({date, selected, theme}) => {
+export const enhanceDay = withPropsOnChange(['selected'], ({ date, selected, theme }) => {
   const isSelected = date >= selected.start && date <= selected.end;
   const isStart = date === selected.start;
   const isEnd = date === selected.end;
   const isRange = !(isStart && isEnd);
   const style = isRange && (
-    isStart && {backgroundColor: theme.accentColor} ||
-    isEnd && {borderColor: theme.accentColor}
-  );
+      isStart && { backgroundColor: theme.accentColor } ||
+      isEnd && { borderColor: theme.accentColor }
+    );
 
   return {
     className: isSelected && isRange && classNames(styles.range, {
@@ -52,21 +52,24 @@ export const withRange = compose(
     DayComponent: enhanceDay(DayComponent),
     HeaderComponent: enhanceHeader(HeaderComponent),
   })),
-  withProps(({displayKey, passThrough, selected, setDisplayKey, ...props}) => ({
+  withProps(({ displayKey, passThrough, selected, setDisplayKey, ...props }) => ({
     /* eslint-disable sort-keys */
     passThrough: {
       ...passThrough,
       Day: {
-        onClick: (date) => handleSelect(date, {selected, ...props}),
+        onClick: (date) => handleSelect(date, { selected, ...props }),
         handlers: {
           onMouseOver: !isTouchDevice && props.selectionStart
-            ? (e) => handleMouseOver(e, {selected, ...props})
+            ? (e) => handleMouseOver(e, { selected, ...props })
             : null,
         },
       },
       Years: {
         selected: selected[displayKey],
-        onSelect: (date) => handleYearSelect(date, {displayKey, selected, ...props}),
+        onSelect: (date) => handleYearSelect(date, {
+          displayKey,
+          selected, ...props
+        }),
       },
       Header: {
         onYearClick: (date, e, key) => setDisplayKey(key || 'start'),
@@ -79,13 +82,13 @@ export const withRange = compose(
   })),
 );
 
-function getSortedSelection({start, end}) {
+function getSortedSelection({ start, end }) {
   return isBefore(start, end)
-    ? {start, end}
-    : {start: end, end: start};
+    ? { start, end }
+    : { start: end, end: start };
 }
 
-function handleSelect(date, {onSelect, selected, selectionStart, setSelectionStart}) {
+function handleSelect(date, { onSelect, selected, selectionStart, setSelectionStart }) {
   if (selectionStart) {
     onSelect({
       eventType: EVENT_TYPE.END,
@@ -96,16 +99,18 @@ function handleSelect(date, {onSelect, selected, selectionStart, setSelectionSta
     });
     setSelectionStart(null);
   } else {
-    onSelect({eventType:EVENT_TYPE.START, start: date, end: date});
+    onSelect({ eventType: EVENT_TYPE.START, start: date, end: date });
     setSelectionStart(date);
   }
 }
 
-function handleMouseOver(e, {onSelect, selectionStart}) {
+function handleMouseOver(e, { onSelect, selectionStart }) {
   const dateStr = e.target.getAttribute('data-date');
   const date = dateStr && parse(dateStr);
 
-  if (!date) { return; }
+  if (!date) {
+    return;
+  }
 
   onSelect({
     eventType: EVENT_TYPE.HOVER,
@@ -116,20 +121,22 @@ function handleMouseOver(e, {onSelect, selectionStart}) {
   });
 }
 
-function handleYearSelect(date, {displayKey, onSelect, selected, setScrollDate}) {
+function handleYearSelect(date, { displayKey, onSelect, selected, setScrollDate }) {
 
   setScrollDate(date);
   onSelect(getSortedSelection(
-    Object.assign({}, selected, {[displayKey]: parse(date)}))
+    Object.assign({}, selected, { [displayKey]: parse(date) }))
   );
 }
 
-function getInitialDate({selected}) {
+function getInitialDate({ selected }) {
   return selected.start || new Date();
 }
+if (typeof window !== 'undefined') {
+  window.addEventListener('touchstart', function onTouch() {
+    isTouchDevice = true;
 
-window.addEventListener('touchstart', function onTouch() {
-  isTouchDevice = true;
+    window.removeEventListener('touchstart', onTouch, false);
+  });
+}
 
-  window.removeEventListener('touchstart', onTouch, false);
-});
